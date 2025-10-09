@@ -18,6 +18,12 @@
 
     const CSV_URL = "data/global_co2_2000_2023_filtered.csv";
 
+    const OCEANS_URL =
+      "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/7_others/oceans.topojson";
+
+    const GRATICULES_URL =
+      "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/2_symbol_map/js/WorldMapWithGraticules.topojson";
+
     const spec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
       "title": {
@@ -45,11 +51,29 @@
       ],
 
       "layer": [
+        // --- OCEANS BACKGROUND ---
+        {
+          "data": {
+            "url": OCEANS_URL,
+            "format": { "type": "topojson", "feature": "oceans" }
+          },
+          "mark": { "type": "geoshape", "fill": "skyblue" }
+        },
 
+        // --- GRATICULES GRID ---
+        {
+          "data": {
+            "url": GRATICULES_URL,
+            "format": { "type": "topojson", "feature": "ne_110m_graticules_30" }
+          },
+          "mark": { "type": "geoshape", "fill": null, "stroke": "lightgray" }
+        },
+
+        // --- BASE MAP (countries, grey fallback) ---
         {
           "data": {
             "url": WORLD_TOPO_URL,
-            "format": {"type": "topojson", "feature": "ne_110m_admin_0_countries"}
+            "format": { "type": "topojson", "feature": "ne_110m_admin_0_countries" }
           },
           "transform": [
             {
@@ -58,15 +82,20 @@
               "as": "note"
             }
           ],
-          "mark": {"type": "geoshape", "fill": "#d3d3d3", "stroke": "white", "strokeWidth": 0.5},
+          "mark": {
+            "type": "geoshape",
+            "fill": "#d3d3d3",
+            "stroke": "white",
+            "strokeWidth": 0.5
+          },
           "encoding": {
-            "tooltip": {"field": "note", "title": null}
+            "tooltip": { "field": "note", "title": null }
           }
         },
 
-      
+        // --- EMISSIONS OVERLAY ---
         {
-          "data": {"url": CSV_URL},
+          "data": { "url": CSV_URL },
           "transform": [
             { "calculate": "toNumber(datum.year)", "as": "year_num" },
             { "filter": "datum.year_num == Year_Selection" },
@@ -76,24 +105,19 @@
               "from": {
                 "data": {
                   "url": WORLD_TOPO_URL,
-                  "format": {"type": "topojson", "feature": "ne_110m_admin_0_countries"}
+                  "format": { "type": "topojson", "feature": "ne_110m_admin_0_countries" }
                 },
                 "key": "properties.ADM0_A3",
                 "fields": ["type", "properties", "geometry"]
               }
             },
-
             { "filter": "isValid(datum.geometry)" },
 
-         
             { "calculate": "toNumber(datum.co2)", "as": "co2_num" },
             { "calculate": "datum.co2_num + 0.1", "as": "co2_plus" }
           ],
-          "mark": {"type": "geoshape", "stroke": "white", "strokeWidth": 0.5},
+          "mark": { "type": "geoshape", "stroke": "white", "strokeWidth": 0.5 },
           "encoding": {
-          
-            "shape": {"field": "geometry"},
-
             "color": {
               "field": "co2_plus",
               "type": "quantitative",
@@ -101,9 +125,9 @@
               "title": "CO₂ Emissions (Mt)"
             },
             "tooltip": [
-              {"field": "country", "title": "Country"},
-              {"field": "year_num", "title": "Year"},
-              {"field": "co2_num", "title": "CO₂ Emissions (Mt)", "format": ".3f"}
+              { "field": "country", "title": "Country" },
+              { "field": "year_num", "title": "Year" },
+              { "field": "co2_num", "title": "CO₂ Emissions (Mt)", "format": ".3f" }
             ]
           }
         }
