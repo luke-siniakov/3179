@@ -1,0 +1,9 @@
+country,year,emission_source,co2_emissions_tonnes
+Australia,2023,Co2,382.972
+Australia,2023,Coal,142.666
+Australia,2023,Oil,141.596
+Australia,2023,Gas,74.636
+Australia,2023,Cement,2.818
+Australia,2023,Flaring,17.14
+Australia,2023,Land Use Change,70.094
+Australia,2023,Other Industry,4.115

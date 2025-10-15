@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.17.0"></script>
+  <title>CO₂ Emissions Share Pie Chart</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #fafafa;
+      margin: 40px;
+      text-align: center;
+    }
+    h1 {
+      font-weight: 600;
+      color: #333;
+    }
+    #vis {
+      margin: auto;
+      width: 700px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Share of Global CO₂ Emissions (2000–2023)</h1>
+  <div id="vis"></div>
+
+  <script>
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "title": null,
+      "width": 600,
+      "height": 400,
+      "params": [
+        {
+          "name": "year_select",
+          "value": 2000,
+          "bind": {
+            "input": "range",
+            "min": 2000,
+            "max": 2023,
+            "step": 1,
+            "name": "Year: "
+          }
+        }
+      ],
+      "data": {
+        "url": "data/global_co2_2000_2023_filtered.csv"
+      },
+      "layer": [
+        {
+          // Background layer for missing data years
+          "transform": [
+            {"calculate": "'Data is not available for selected year'", "as": "note"},
+            {"filter": "datum.year != year_select"}
+          ],
+          "mark": {"type": "arc", "innerRadius": 70, "fill": "lightgray"},
+          "encoding": {"tooltip": {"field": "note"}}
+        },
+        {
+          // Main pie chart layer
+          "transform": [
+            {"filter": "datum.year == year_select"},
+            {"calculate": "toNumber(datum.share_global_co2)", "as": "share"},
+            {"filter": "isValid(datum.share)"},
+            {
+              "calculate": "datum.country == 'China' || datum.country == 'United States' || datum.country == 'India' || datum.country == 'Russia' || datum.country == 'Japan' || datum.country == 'Australia' ? datum.country : 'Rest of World'",
+              "as": "country_group"
+            },
+            {
+              "aggregate": [{"op": "sum", "field": "share", "as": "total_share"}],
+              "groupby": ["country_group"]
+            },
+            {
+              "calculate": "datum.country_group + ' (' + format(datum.total_share, '.1f') + '%)'",
+              "as": "Label"
+            }
+          ],
+          "mark": {"type": "arc", "innerRadius": 70},
+          "encoding": {
+            "theta": {"field": "total_share", "type": "quantitative"},
+            "color": {
+              "field": "country_group",
+              "type": "nominal",
+              "scale": {
+                "domain": ["China", "United States", "India", "Russia", "Japan", "Australia", "Rest of World"],
+                "range": ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628", "#999999"]
+              },
+              "title": "Country"
+            },
+            "tooltip": [
+              {"field": "country_group", "title": "Country"},
+              {"field": "total_share", "title": "Share of Global CO₂ (%)", "format": ".2f"}
+            ]
+          }
+        },
+        {
+          // Annotation layer (labels around the arcs)
+          "transform": [
+            {"filter": "datum.year == year_select"},
+            {"calculate": "toNumber(datum.share_global_co2)", "as": "share"},
+            {"filter": "isValid(datum.share)"},
+            {
+              "calculate": "datum.country == 'China' || datum.country == 'United States' || datum.country == 'India' || datum.country == 'Russia' || datum.country == 'Japan' || datum.country == 'Australia' ? datum.country : 'Rest of World'",
+              "as": "country_group"
+            },
+            {
+              "aggregate": [{"op": "sum", "field": "share", "as": "total_share"}],
+              "groupby": ["country_group"]
+            },
+            {
+              "calculate": "datum.country_group + ' (' + format(datum.total_share, '.1f') + '%)'",
+              "as": "Label"
+            }
+          ],
+          "mark": {
+            "type": "text",
+            "radius": 220,
+            "fontSize": 13,
+            "fontWeight": "bold",
+            "fill": "#333"
+          },
+          "encoding": {
+            "text": {"field": "Label"},
+            "theta": {"field": "total_share", "type": "quantitative", "stack": true}
+          }
+        }
+      ],
+      "view": {"stroke": null}
+    };
+
+    vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+  </script>
+</body>
+</html>

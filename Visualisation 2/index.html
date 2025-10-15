@@ -1,27 +1,257 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!-- Import Vega & Vega-Lite (does not have to be from CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/vega@5.22.1"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.5.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.21.0"></script>
-  
-  <!-- CSS file -->
-  <link rel="stylesheet" type="text/css" href="css/styles.css" media="all">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIT 3179 Data Visualisation 2 - Luke Siniakov 33117713</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
 
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    main {
+      max-width: 2000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    section {
+      background: white;
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    section h2 {
+      color: #667eea;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 0.5rem;
+    }
+
+    .content-wrapper {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .viz-container {
+      width: 100%;
+      height: 550px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .map-container {
+      height: 600px;
+    }
+
+    .bar-container {
+      height: 700px;
+    }
+
+    .text-content {
+      background: #f9f9f9;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      line-height: 1.8;
+      min-height: 200px;
+    }
+
+    .text-content h3 {
+      color: #667eea;
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+    }
+
+    .text-content p {
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .vconcat-charts {
+      display: flex;
+      flex-direction: column;
+      gap: 0rem;
+    }
+
+    .vconcat-charts .viz-container {
+      height: 500px;
+    }
+
+    .conclusion {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      padding: 3rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .conclusion h2 {
+      color: white;
+      border-bottom: 3px solid white;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+    }
+
+    .conclusion p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive design */
+    @media (max-width: 1200px) {
+      .content-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8rem;
+      }
+
+      section {
+        padding: 1rem;
+      }
+
+      section h2 {
+        font-size: 1.4rem;
+      }
+
+      .viz-container {
+        height: 400px;
+      }
+
+      .conclusion {
+        padding: 2rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  
-<div id="choropleth_map"></div>
+  <header>
+    <h1>What is Australia's Effect on Global CO₂ Emissions?</h1>
+  </header>
 
-<script type="text/javascript">
+  <main>
 
-  var spec2 = "js/choropleth_map.vg.json";
-  vegaEmbed('#choropleth_map', spec2).then(function(result) {
-    // Access the Vega view instance (https://vega.github.io/vega/docs/api/view/) as result.view
-  }).catch(console.error);
-</script>
+    <!-- Introduction Section -->
+    <section>
+      <h2>Introduction: Understanding Global CO₂ Emissions</h2>
+      <div class="text-content">
+        <p>Carbon dioxide (CO₂) is the primary greenhouse gas responsible for global climate change, produced mainly from the combustion of fossil fuels such as coal, oil, and natural gas. It also arises from industrial processes like cement production and land-use change (e.g., deforestation). In 2000, the world emitted roughly 24 billion tonnes of CO₂, rising to around 37 billion tonnes by 2023 — an increase of more than 50% over two decades. This growth mirrors global industrialisation and energy demand, particularly in developing economies.</p>
+        <br>
+        <p>Governments, scientists, and international organisations such as the United Nations and the IPCC (Intergovernmental Panel on Climate Change) have highlighted the need to drastically reduce emissions to limit global warming to below 1.5 °C above pre-industrial levels. The transition to renewable energy sources — solar, wind, and hydro — along with innovations in carbon capture and storage, are now at the centre of international climate discussions.</p>
+      </div>
+    </section>
 
+    <!-- Choropleth Map -->
+    <section>
+      <h2>Global CO₂ Emissions Map (2000–2023)</h2>
+      <div class="content-wrapper">
+        <iframe src="choropleth_map.html" class="viz-container map-container"></iframe>
+        <div class="text-content">
+          <p>This choropleth map visualises how CO₂ emissions have changed by country from 2000 to 2023. The red colour scale indicates the magnitude of emissions in million tonnes (Mt), where darker shades represent higher emissions. The data reveals significant geographic contrasts: China’s emissions surged from about 3,200 Mt in 2000 to over 12,000 Mt in 2023, making it the largest global emitter.</p>
+          <br>
+          <p>The United States, once the highest emitter, shows a decline, from roughly 6,000 Mt in 2000 to around 5,000 Mt in 2023, reflecting shifts toward cleaner energy and efficiency improvements. Meanwhile, countries like India and Indonesia show rapid growth, while European nations such as Germany and the United Kingdom exhibit steady declines due to policy action and technological transitions.</p>
+          <br>
+          <p>Australia, with about 400 Mt in 2023, remains a mid-range emitter but with one of the highest per-capita footprints. These trends collectively underscore a global imbalance: while some nations are curbing emissions, others are still rising sharply, illustrating the complex challenge of achieving equitable and effective global decarbonisation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Animated Bar Chart -->
+    <section>
+      <h2>Top 10 CO₂ Emitting Countries for each year (2000–2023)</h2>
+      <div class="content-wrapper">
+        <iframe src="animated_bar_chart.html" class="viz-container bar-container"></iframe>
+        <div class="text-content">
+          <p>This animated bar chart race illustrates how the top ten CO₂-emitting countries have shifted over time from 2000 to 2023. Each bar represents a nation’s total annual CO₂ emissions, measured in million tonnes (Mt). The animation highlights the rapid acceleration of global emissions, from around 24 billion tonnes in 2000 to roughly 37 billion tonnes in 2023. China’s remarkable industrial expansion dominates the story — its emissions soared from about 3,200 Mt in 2000 to over 12,000 Mt in 2023, overtaking the United States in the mid-2000s. The United States, once the top emitter, shows a gradual decline from around 6,000 Mt to just over 5,000 Mt, reflecting its shift toward cleaner energy and reduced coal use.</p>
+          <br>
+          <p>India’s emissions more than doubled, rising from roughly 1,000 Mt to nearly 3,500 Mt, while emerging economies like Indonesia, Iran, and Saudi Arabia also climbed into the top ranks. In contrast, European nations such as Germany and the United Kingdom demonstrate declining trajectories through efficiency gains and renewable adoption. Australia, though not among the highest globally, consistently appears within the top 15, underscoring its carbon-intensive economy. This visualisation powerfully conveys how global industrial growth and regional energy choices have continually reshaped the world’s carbon landscape over the past two decades.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Line Charts Vertically Stacked -->
+    <section>
+      <h2>CO₂ Emissions Trends: Total vs Per Capita</h2>
+      <div class="content-wrapper">
+        <div class="vconcat-charts">
+          <iframe src="line_chart.html" class="viz-container"></iframe>
+          <iframe src="line_per_capita.html" class="viz-container"></iframe>
+        </div>
+
+        <div class="text-content">
+          <h3>About the Line Charts: Global Emission Trends and Australia’s Position (2000–2023)</h3>
+          <p>These two line charts together illustrate how global CO₂ emissions have evolved since 2000, comparing the world’s top emitters with the overall global average, and revealing how Australia’s contribution fits within this broader context. The first chart, showing total national emissions, highlights China’s rapid industrial expansion — increasing from about 3,200 million tonnes (Mt) in 2000 to more than 12,000 Mt in 2023 — overtaking the United States, which declined slightly from around 6,000 Mt to just above 5,000 Mt. India’s output climbed sharply from roughly 1,000 Mt to nearly 3,500 Mt, while Russia and Japan maintained relatively stable levels throughout the period. In contrast, Australia’s total emissions remained between 370 and 420 Mt, accounting for only about 1% of global emissions in 2023. This places Australia well below major economies in absolute terms, yet its emissions have not fallen significantly despite global efforts toward decarbonisation.</p>
+          <br>
+          <p>The second chart, which tracks CO₂ emissions per capita, offers a more striking contrast. While the global average sits at approximately 4.6 tonnes per person in 2023, Australia’s per-person emissions exceed 15 tonnes, over three times the global mean and higher than most developed nations. Even as countries like the United States and Japan have reduced their per capita emissions since 2000, Australia’s values have remained persistently high. This divergence highlights the structural challenges posed by Australia’s energy mix — heavily reliant on coal and fossil fuel exports — and underscores the importance of transitioning toward renewable energy sources to align more closely with global decarbonisation trends.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Australia Chart -->
+    <section>
+      <h2>Australia CO₂ Emissions Details</h2>
+      <div class="content-wrapper">
+        <iframe src="australia_chart.html" class="viz-container"></iframe>
+        <div class="text-content">
+          <h3>Australia's Emissions Profile</h3>
+          <p>Fill in here</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Conclusion -->
+    <div class="conclusion">
+      <h2>Conclusion</h2>
+      <p>Fill in here</p>
+      <p>Fill in here</p>
+      <p>Fill in here</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>Data Source: Global Carbon Project | Dashboard created for CO₂ emissions analysis</p>
+    <p>© 2024 CO₂ Emissions Visualization Project</p>
+  </footer>
 </body>
 </html>

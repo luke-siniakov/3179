@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.17.0"></script>
+  <title>Australia CO₂ Emissions Breakdown (2023)</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #fafafa;
+      margin: 40px;
+      text-align: center;
+    }
+    h1 {
+      font-weight: 600;
+      color: #333;
+    }
+    #vis {
+      margin: auto;
+      width: 700px;
+    }
+  </style>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": {
+        "url": "data/australia_co2_emissions_2023.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"filter": "datum.country == 'Australia'"},
+        {"filter": "datum.year == 2023"},
+        {"filter": "datum.emission_source != 'Co2'"},
+        {
+          "joinaggregate": [{"op": "sum", "field": "co2_emissions_tonnes", "as": "TotalEmissions"}]
+        },
+        {
+          "calculate": "(datum.co2_emissions_tonnes / datum.TotalEmissions) * 100",
+          "as": "Percentage"
+        },
+        {
+          "calculate": "datum.emission_source + ' (' + format(datum.Percentage, '.1f') + '%)'",
+          "as": "Label"
+        }
+      ],
+      "width": 600,
+      "height": 400,
+      "layer": [
+        {
+          "mark": { "type": "arc", "innerRadius": 80, "outerRadius": 180 },
+          "encoding": {
+            "theta": { "field": "Percentage", "type": "quantitative" },
+            "color": {
+              "field": "emission_source",
+              "type": "nominal",
+              "scale": {
+                "domain": ["Coal", "Oil", "Gas", "Cement", "Flaring", "Land Use Change", "Other Industry"],
+                "range": ["#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1"]
+              },
+              "title": "Emission Source"
+            },
+            "tooltip": [
+              { "field": "emission_source", "title": "Source" },
+              { "field": "Percentage", "title": "Share of Total (%)", "format": ".2f" },
+              { "field": "co2_emissions_tonnes", "title": "Emissions (Mt CO₂)", "format": ".2f" }
+            ]
+          }
+        },
+        {
+          "transform": [
+            {"filter": "datum.emission_source == 'Coal' || datum.emission_source == 'Oil' || datum.emission_source == 'Gas' || datum.emission_source == 'Land Use Change'"}
+          ],
+          "mark": {
+            "type": "text",
+            "radius": 220,
+            "fontSize": 13,
+            "fontWeight": "bold",
+            "fill": "#333"
+          },
+          "encoding": {
+            "text": { "field": "Label" },
+            "theta": { "field": "Percentage", "type": "quantitative", "stack": true }
+          }
+        }
+      ],
+      "view": { "stroke": null },
+      "title": {
+        "text": "Australia's CO₂ Emissions by Source (2023)",
+        "fontSize": 18,
+        "fontWeight": "bold",
+        "anchor": "middle"
+      }
+    };
+    vegaEmbed("#vis", spec, { mode: "vega-lite" }).then(console.log).catch(console.warn);
+  </script>
+</body>
+</html>

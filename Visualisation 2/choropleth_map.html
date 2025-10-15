@@ -7,28 +7,48 @@
   <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.17.0"></script>
-  <title>Interactive CO₂ Emissions Map (2000–2023)</title>
+  <title>Global CO₂ Emissions Map (2000–2023)</title>
+
+  <style>
+    body {
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: transparent; /* Blend with dashboard */
+    }
+
+    #vis {
+      width: 100%;
+      max-width: 1000px;
+      height: 500px;
+      margin: 0 auto;
+    }
+
+    input[type="range"] {
+      width: 300px;
+      accent-color: #de2d26;
+    }
+
+    .vega-embed {
+      background: transparent;
+    }
+  </style>
 </head>
+
 <body>
   <div id="vis"></div>
 
   <script>
-    const WORLD_TOPO_URL =
-      "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/3_choropleth_map/js/ne_110m_admin_0_countries.topojson";
-
+    const WORLD_TOPO_URL = "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/3_choropleth_map/js/ne_110m_admin_0_countries.topojson";
     const CSV_URL = "data/global_co2_2000_2023_filtered.csv";
+    const OCEANS_URL = "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/7_others/oceans.topojson";
+    const GRATICULES_URL = "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/2_symbol_map/js/WorldMapWithGraticules.topojson";
 
     const spec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-      "title": {
-        "text": "Global CO₂ Emissions by Country",
-        "fontSize": 18,
-        "anchor": "start",
-        "color": "#333"
-      },
-      "width": 900,
+      "width": "container",
       "height": 500,
-      "projection": {"type": "equalEarth"},
+      "projection": { "type": "equalEarth" },
 
       "params": [
         {
@@ -39,75 +59,105 @@
             "min": 2000,
             "max": 2023,
             "step": 1,
-            "name": "Year: "
+            "name": "Select Year: "
           }
         }
       ],
 
       "layer": [
+        // --- OCEAN BACKGROUND ---
+        {
+          "data": {
+            "url": OCEANS_URL,
+            "format": { "type": "topojson", "feature": "oceans" }
+          },
+          "mark": { "type": "geoshape", "fill": "#cce5f6" }
+        },
 
+        // --- GRATICULES ---
+        {
+          "data": {
+            "url": GRATICULES_URL,
+            "format": { "type": "topojson", "feature": "ne_110m_graticules_30" }
+          },
+          "mark": { "type": "geoshape", "fill": null, "stroke": "#d0d0d0", "strokeWidth": 0.5 }
+        },
+
+        // --- BASE MAP ---
         {
           "data": {
             "url": WORLD_TOPO_URL,
-            "format": {"type": "topojson", "feature": "ne_110m_admin_0_countries"}
+            "format": { "type": "topojson", "feature": "ne_110m_admin_0_countries" }
           },
           "transform": [
             {
               "calculate":
-                "'Data may be unavailable for ' + datum.properties.NAME + ' in ' + Year_Selection",
+                "'No CO₂ data available for ' + datum.properties.NAME + ' in ' + Year_Selection",
               "as": "note"
             }
           ],
-          "mark": {"type": "geoshape", "fill": "#d3d3d3", "stroke": "white", "strokeWidth": 0.5},
-          "encoding": {
-            "tooltip": {"field": "note", "title": null}
-          }
+          "mark": { "type": "geoshape", "fill": "#e5e5e5", "stroke": "white", "strokeWidth": 0.5 },
+          "encoding": { "tooltip": { "field": "note", "title": null } }
         },
 
-      
+        // --- EMISSIONS OVERLAY ---
         {
-          "data": {"url": CSV_URL},
+          "data": { "url": CSV_URL },
           "transform": [
             { "calculate": "toNumber(datum.year)", "as": "year_num" },
             { "filter": "datum.year_num == Year_Selection" },
-
             {
               "lookup": "iso_code",
               "from": {
                 "data": {
                   "url": WORLD_TOPO_URL,
-                  "format": {"type": "topojson", "feature": "ne_110m_admin_0_countries"}
+                  "format": { "type": "topojson", "feature": "ne_110m_admin_0_countries" }
                 },
                 "key": "properties.ADM0_A3",
                 "fields": ["type", "properties", "geometry"]
               }
             },
-
             { "filter": "isValid(datum.geometry)" },
-
-         
-            { "calculate": "toNumber(datum.co2)", "as": "co2_num" },
-            { "calculate": "datum.co2_num + 0.1", "as": "co2_plus" }
+            { "calculate": "toNumber(datum.co2)", "as": "co2_num" }
           ],
-          "mark": {"type": "geoshape", "stroke": "white", "strokeWidth": 0.5},
+          "mark": { "type": "geoshape", "stroke": "white", "strokeWidth": 0.5 },
           "encoding": {
-          
-            "shape": {"field": "geometry"},
-
             "color": {
-              "field": "co2_plus",
+              "field": "co2_num",
               "type": "quantitative",
-              "scale": { "type": "log", "scheme": "reds", "domain": [0.1, 10000] },
+              "scale": {
+                "type": "threshold",
+                "domain": [10, 50, 200, 500, 1000, 5000],
+                "range": [
+                  "#fff5f0",
+                  "#fee0d2",
+                  "#fcbba1",
+                  "#fc9272",
+                  "#fb6a4a",
+                  "#de2d26",
+                  "#a50f15"
+                ]
+              },
               "title": "CO₂ Emissions (Mt)"
             },
             "tooltip": [
-              {"field": "country", "title": "Country"},
-              {"field": "year_num", "title": "Year"},
-              {"field": "co2_num", "title": "CO₂ Emissions (Mt)", "format": ".3f"}
+              { "field": "properties.NAME", "title": "Country" },
+              { "field": "year_num", "title": "Year" },
+              { "field": "co2_num", "title": "CO₂ Emissions (Mt)", "format": ",.0f" }
             ]
           }
         }
-      ]
+      ],
+
+      "config": {
+        "title": { "font": "Inter, sans-serif", "fontSize": 18, "anchor": "start", "color": "#222" },
+        "legend": {
+          "titleFont": "Inter, sans-serif",
+          "labelFont": "Inter, sans-serif",
+          "labelFontSize": 12,
+          "titleFontSize": 13
+        }
+      }
     };
 
     vegaEmbed("#vis", spec, { mode: "vega-lite" })

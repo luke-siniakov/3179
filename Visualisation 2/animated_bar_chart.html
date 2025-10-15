@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Top 10 CO₂ Emitters - Animated Bar Chart Race</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.17.0"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    #vis {
+      width: 100%;
+      height: 600px;
+    }
+
+    .vega-embed {
+      background: transparent; /* Remove background to blend with dashboard */
+    }
+  </style>
+</head>
+<body>
+  <div id="vis"></div>
+
+  <script>
+    const countryColors = {
+      "China": "#de2910",
+      "United States": "#3c3b6e",
+      "India": "#ff9933",
+      "Russia": "#d52b1e",
+      "Japan": "#bc002d",
+      "Germany": "#000000",
+      "Australia": "#00247d",
+      "Brazil": "#009c3b",
+      "Canada": "#ff0000",
+      "South Korea": "#003478",
+      "United Kingdom": "#012169",
+      "Indonesia": "#ff0000",
+      "Italy": "#008C45",
+      "Iran": "#239f40",
+      "France": "#0055a4",
+      "Mexico": "#006847",
+      "Saudi Arabia": "#006c35"
+    };
+
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": "container",
+      "height": 600,
+      "data": { "url": "data/global_co2_2000_2023_filtered.csv" },
+      "params": [
+        {
+          "name": "year_select",
+          "value": 2000,
+          "bind": { "input": "range", "min": 2000, "max": 2023, "step": 1, "name": "Year: " }
+        }
+      ],
+      "transform": [
+        { "calculate": "toNumber(datum.co2)", "as": "co2_num" },
+        { "filter": "isValid(datum.co2_num) && isValid(datum.year)" },
+        { "filter": "datum.year == year_select" },
+        { 
+          "window": [{ "op": "rank", "as": "rank" }],
+          "sort": [{ "field": "co2_num", "order": "descending" }],
+          "groupby": ["year"]
+        },
+        { "filter": "datum.rank <= 10" }
+      ],
+      "mark": {
+        "type": "bar",
+        "tooltip": true,
+        "cornerRadiusTopLeft": 5,
+        "cornerRadiusTopRight": 5
+      },
+      "encoding": {
+        "x": {
+          "field": "co2_num",
+          "type": "quantitative",
+          "title": "CO₂ Emissions (Mt)",
+          "axis": { "labelFontSize": 14, "titleFontSize": 16, "domainColor": "#888" }
+        },
+        "y": {
+          "field": "country",
+          "type": "nominal",
+          "sort": "-x",
+          "title": null,
+          "axis": { "labelFontSize": 14, "domainColor": "#888" }
+        },
+        "color": {
+          "field": "country",
+          "type": "nominal",
+          "scale": { "domain": Object.keys(countryColors), "range": Object.values(countryColors) },
+          "legend": null
+        },
+        "tooltip": [
+          {"field": "country", "title": "Country"},
+          {"field": "co2_num", "title": "CO₂ (Mt)", "format": ".2f"},
+          {"field": "year", "title": "Year"}
+        ]
+      },
+      "config": {
+        "view": { "stroke": "transparent" },
+        "axis": { "domainWidth": 1, "labelFontWeight": "bold" },
+        "bar": { "binSpacing": 3 }
+      }
+    };
+
+    vegaEmbed("#vis", spec, {mode: "vega-lite", actions: false}).then(result => {
+      let year = 2000;
+      const interval = setInterval(() => {
+        if (year > 2023) { clearInterval(interval); return; }
+        result.view.signal('year_select', year).run();
+        year++;
+      }, 900);
+    }).catch(console.warn);
+  </script>
+</body>
+</html>
