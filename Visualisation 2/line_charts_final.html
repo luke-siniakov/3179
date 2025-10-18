@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Combined CO₂ charts with dots and HTML legend</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.22.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.20.8"></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin: 18px; }
+    .legend { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+    .legend button {
+      border:1px solid #ddd; background:#fff; padding:6px 10px; border-radius:6px; cursor:pointer;
+      display:inline-flex; gap:8px; align-items:center;
+    }
+    .legend button.active { box-shadow: 0 0 0 3px rgba(0,0,0,0.1); background:#f9f9f9; }
+    .legend .swatch { width:14px; height:12px; border-radius:3px; display:inline-block; }
+    #container { max-width:900px; }
+    .chart { margin-bottom:8px; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div class="legend" id="legend"></div>
+    <div id="chart-total" class="chart"></div>
+    <div id="chart-percap" class="chart"></div>
+  </div>
+
+<script>
+const dataUrl = "data/global_co2_2000_2023_filtered.csv";
+const colorDomain = ["China","United States","India","Russia","Japan","Australia","Global Average"];
+const colorRange  = ["#e41a1c","#377eb8","#4daf4a","#984ea3","#ff7f00","#a65628","black"];
+
+// === Legend ===
+const legendEl = document.getElementById('legend');
+colorDomain.forEach(c => {
+  const btn = document.createElement('button');
+  btn.setAttribute('data-country', c);
+  btn.innerHTML = `<span class="swatch" style="background:${colorRange[colorDomain.indexOf(c)]}"></span> ${c}`;
+  legendEl.appendChild(btn);
+});
+const resetBtn = document.createElement('button');
+resetBtn.textContent = "Reset";
+legendEl.appendChild(resetBtn);
+
+// === Colors and opacity ===
+const baseColor = {
+  "field":"country",
+  "type":"nominal",
+  "scale":{"domain":colorDomain,"range":colorRange},
+  "legend":null
+};
+const opacityHighlight = {
+  "condition":{"test":"selected_country==null || datum.country==selected_country","value":1},
+  "value":0.15
+};
+
+// === Y-axis padding parameters ===
+const yPaddingTotal = 10;  // tweak for total CO₂ chart
+const yPaddingPerCap = 30; // tweak for per-capita CO₂ chart
+
+/* TOTAL CO₂ */
+const specTotal = {
+  "$schema":"https://vega.github.io/schema/vega-lite/v5.json",
+  "width":800,"height":400,"data":{"url":dataUrl},
+  "params":[{"name":"selected_country","value":null}],
+  "transform":[
+    {"calculate":"toNumber(datum.year)","as":"year_num"},
+    {"calculate":"toNumber(datum.co2)","as":"co2_num"},
+    {"filter":"isValid(datum.co2_num)&&isValid(datum.year_num)"},
+    {"calculate":"datum.country=='China'||datum.country=='United States'||datum.country=='India'||datum.country=='Russia'||datum.country=='Japan'||datum.country=='Australia'?datum.country:null","as":"top_country"}
+  ],
+  "layer":[
+    // Global Average Line
+    {
+      "transform":[
+        {"aggregate":[{"op":"mean","field":"co2_num","as":"avg_co2"}],"groupby":["year_num"]},
+        {"calculate":"'Global Average'","as":"country"}
+      ],
+      "mark":{"type":"line","strokeDash":[5,3],"strokeWidth":2},
+      "encoding":{
+        "x":{
+          "field":"year_num",
+          "type":"quantitative",
+          "title":"Year",
+          "scale":{"domain":[2000,2023]},
+          "axis":{"format":"d"}
+        },
+        "y":{
+          "field":"avg_co2",
+          "type":"quantitative",
+          "title":"CO₂ Emissions (Mt)",
+          "axis":{"labelPadding": yPaddingTotal}
+        },
+        "color":baseColor,
+        "opacity":opacityHighlight
+      }
+    },
+    // Global Average Points
+    {
+      "transform":[
+        {"aggregate":[{"op":"mean","field":"co2_num","as":"avg_co2"}],"groupby":["year_num"]},
+        {"calculate":"'Global Average'","as":"country"}
+      ],
+      "mark":{"type":"point","filled":true,"size":50,"color":"black"},
+      "encoding":{
+        "x":{
+          "field":"year_num",
+          "type":"quantitative",
+          "scale":{"domain":[2000,2023]},
+          "axis":{"format":"d"}
+        },
+        "y":{"field":"avg_co2","type":"quantitative","axis":{"labelPadding": yPaddingTotal}},
+        "opacity":opacityHighlight,
+        "tooltip":[{"field":"country"},{"field":"avg_co2"},{"field":"year_num"}]
+      }
+    },
+    // Country Lines
+    {
+      "transform":[{"filter":"datum.top_country!=null"}],
+      "mark":{"type":"line"},
+      "encoding":{
+        "x":{"field":"year_num","type":"quantitative","scale":{"domain":[2000,2023]},"axis":{"format":"d"}},
+        "y":{"field":"co2_num","type":"quantitative","axis":{"labelPadding": yPaddingTotal}},
+        "color":baseColor,
+        "opacity":opacityHighlight,
+        "tooltip":[{"field":"country"},{"field":"year_num"},{"field":"co2_num"}]
+      }
+    },
+    // Country Points
+    {
+      "transform":[{"filter":"datum.top_country!=null"}],
+      "mark":{"type":"point","filled":true,"size":50},
+      "encoding":{
+        "x":{"field":"year_num","type":"quantitative","scale":{"domain":[2000,2023]},"axis":{"format":"d"}},
+        "y":{"field":"co2_num","type":"quantitative","axis":{"labelPadding": yPaddingTotal}},
+        "color":baseColor,
+        "opacity":opacityHighlight,
+        "tooltip":[{"field":"country"},{"field":"year_num"},{"field":"co2_num"}]
+      }
+    }
+  ]
+};
+
+/* PER CAPITA CO₂ */
+const specPerCap = {
+  "$schema":"https://vega.github.io/schema/vega-lite/v5.json",
+  "width":800,"height":400,"data":{"url":dataUrl},
+  "params":[{"name":"selected_country","value":null}],
+  "transform":[
+    {"calculate":"toNumber(datum.year)","as":"year_num"},
+    {"calculate":"toNumber(datum.co2_per_capita)","as":"co2_pc"},
+    {"filter":"isValid(datum.co2_pc)&&isValid(datum.year_num)"},
+    {"calculate":"datum.country=='China'||datum.country=='United States'||datum.country=='India'||datum.country=='Russia'||datum.country=='Japan'||datum.country=='Australia'?datum.country:null","as":"selected_country"}
+  ],
+  "layer":[
+    // Global Average Line
+    {
+      "transform":[
+        {"aggregate":[{"op":"mean","field":"co2_pc","as":"avg_pc"}],"groupby":["year_num"]},
+        {"calculate":"'Global Average'","as":"country"}
+      ],
+      "mark":{"type":"line","strokeDash":[5,3],"strokeWidth":2},
+      "encoding":{
+        "x":{"field":"year_num","type":"quantitative","title":"Year","scale":{"domain":[2000,2023]},"axis":{"format":"d"}},
+        "y":{"field":"avg_pc","type":"quantitative","title":"CO₂ Emissions per Capita (t/person)","axis":{"labelPadding": yPaddingPerCap}},
+        "color":baseColor,
+        "opacity":opacityHighlight
+      }
+    },
+    // Global Average Points
+    {
+      "transform":[
+        {"aggregate":[{"op":"mean","field":"co2_pc","as":"avg_pc"}],"groupby":["year_num"]},
+        {"calculate":"'Global Average'","as":"country"}
+      ],
+      "mark":{"type":"point","filled":true,"size":50,"color":"black"},
+      "encoding":{
+        "x":{"field":"year_num","type":"quantitative","scale":{"domain":[2000,2023]},"axis":{"format":"d"}},
+        "y":{"field":"avg_pc","type":"quantitative","axis":{"labelPadding": yPaddingPerCap}},
+        "opacity":opacityHighlight,
+        "tooltip":[{"field":"country"},{"field":"avg_pc"},{"field":"year_num"}]
+      }
+    },
+    // Country Lines
+    {
+      "transform":[{"filter":"datum.selected_country!=null"}],
+      "mark":{"type":"line"},
+      "encoding":{
+        "x":{"field":"year_num","type":"quantitative","scale":{"domain":[2000,2023]},"axis":{"format":"d"}},
+        "y":{"field":"co2_pc","type":"quantitative","axis":{"labelPadding": yPaddingPerCap}},
+        "color":baseColor,
+        "opacity":opacityHighlight,
+        "tooltip":[{"field":"country"},{"field":"year_num"},{"field":"co2_pc"}]
+      }
+    },
+    // Country Points
+    {
+      "transform":[{"filter":"datum.selected_country!=null"}],
+      "mark":{"type":"point","filled":true,"size":50},
+      "encoding":{
+        "x":{"field":"year_num","type":"quantitative","scale":{"domain":[2000,2023]},"axis":{"format":"d"}},
+        "y":{"field":"co2_pc","type":"quantitative","axis":{"labelPadding": yPaddingPerCap}},
+        "color":baseColor,
+        "opacity":opacityHighlight,
+        "tooltip":[{"field":"country"},{"field":"year_num"},{"field":"co2_pc"}]
+      }
+    }
+  ]
+};
+
+// === Embed charts ===
+let viewTotal=null, viewPerCap=null;
+vegaEmbed("#chart-total", specTotal, {mode:"vega-lite"}).then(r=>viewTotal=r.view);
+vegaEmbed("#chart-percap", specPerCap, {mode:"vega-lite"}).then(r=>viewPerCap=r.view);
+
+// === Legend interactivity ===
+function setCountry(c){
+  if(viewTotal) viewTotal.signal("selected_country",c).run();
+  if(viewPerCap) viewPerCap.signal("selected_country",c).run();
+  legendEl.querySelectorAll("button[data-country]").forEach(b=>{
+    b.classList.toggle("active",b.getAttribute("data-country")==c);
+  });
+}
+legendEl.addEventListener("click",ev=>{
+  const btn=ev.target.closest("button");
+  if(!btn)return;
+  if(btn===resetBtn){setCountry(null);return;}
+  const c=btn.getAttribute("data-country");
+  const active=btn.classList.contains("active");
+  setCountry(active?null:c);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Total Global CO₂ Emissions (2000–2023) — Arrow</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.17.0"></script>
+  <style>
+    body { font-family: "Inter", Arial, sans-serif; margin:0; background:transparent; }
+    #vis { width:100%; max-width:1000px; height: 600px; margin:50px auto; }
+    h1 { text-align: center; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div id="vis"></div>
+
+  <script>
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "title": "Total Global CO₂ Emissions (Mt CO₂)",   // Units in title
+      "width": "container",
+      "height": 600,
+      "data": { "url": "data/global_co2_2000_2023_filtered.csv" },
+      "transform": [
+        { "filter": "isValid(datum.year) && isValid(datum.co2)" },
+        { "calculate": "toNumber(datum.year)", "as": "year_num" },
+        { "aggregate": [{"op":"sum","field":"co2","as":"global_co2"}], "groupby":["year_num"] }
+      ],
+      "layer": [
+        {
+          "mark": {
+            "type": "line",
+            "strokeWidth": 12,
+            "color": "#de2d26",
+            "interpolate": "monotone"
+          },
+          "encoding": {
+            "x": {
+              "field": "year_num",
+              "type": "quantitative",
+              "scale": { "domain": [2000, 2023] },
+              "axis": { "title": "", "format": "d" }  // x-axis label
+            },
+            "y": {
+              "field": "global_co2",
+              "type": "quantitative",
+              "axis": { "title": "" }  // remove y-axis label
+            },
+            "tooltip": [
+              { "field": "year_num", "title": "Year" },
+              { "field": "global_co2", "title": "Total Global CO₂ (Mt)", "format": ".2f" }
+            ]
+          }
+        },
+        {
+          "transform": [{ "filter": "datum.year_num == 2023" }],
+          "mark": { "type": "point", "shape":"triangle", "angle":90, "size":800, "color":"#de2d26" ,"filled":true },
+          "encoding": {
+            "x": { "field": "year_num", "type": "quantitative" },
+            "y": { "field": "global_co2", "type": "quantitative" }
+          }
+        }
+      ]
+    };
+
+    vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+  </script>
+</body>
+</html>
